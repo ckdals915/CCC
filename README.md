@@ -16,35 +16,186 @@ CCC 순장훈련학교 조편성할 때 많은 인원으로 인해 현장에서 
 
 ## II. Flow-Chart
 
-<img src="https://github.com/ckdals915/CCC/picture/flowchart.jpg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
+<img src="https://github.com/ckdals915/CCC/blob/main/picture/flowchart.jpg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
 
 
 
-## III. PointNet Architecture
+## III. Result
 
-<img src="https://github.com/ckdals915/LiDAR/blob/main/docs/pictures/PointNet_Architecture.jpg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
+<img src="https://github.com/ckdals915/CCC/blob/main/picture/result.jpg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
 
-Architecture에는 3가지 주요 모듈이 있다. **max pooling layer**는 모든 점들로부터 정보를 모으기 위한 symmetric 함수이며, **지역 및 전역 정보 조합 구조**, 입력 점군과 점 특징들을 정렬하는 2개의 **joint alignment network**로 구성된다. 
-
-
-
-### 1. Symmetry Function for Unordered Input
-
-정렬은 2차원에서 좋은 solution이지만 높은 차원(3D)의 자료 정렬은 존재하지 않는다. 예를 들어, 고차원 공간의 점들을 1차원 실수 선으로 projection한 후 정렬할 수 있으나, 이에 대한 역변환으로 원 데이터를 복구할 수 없다. 이를 해결하기 위한 PointNet의 아이디어는 변환된 요소에 대한 **symmetric function**(max-pooling)을 적용한 점군을 정의하는 것이다. 이는 순서에 상관없이 결과가 일정하게 나오기 위함이다. 
-
-f({x1, ..., xn}) = g(h(x1), ..., h(xn))
-
-이 때 g가 max pooling을 해주는 symmetric function이다.
+각 순에 6명씩 편성하였으며, 남는 인원의 경우 기존의 조에 추가적으로 넣었다. 기본적으로 순장 4명, 순원 1~2명으로 편성되어 있으며, 이는 사용자가 원하는 만큼 상황에 맞게 변경할 수 있다.
 
 
 
-### 2. A Local and Global Information Combination Structure
+<img src="https://github.com/ckdals915/CCC/blob/main/picture/excel.jpg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
 
-벡터 f1, ..., fk 형태의 출력은 입력 집합에 대한 global information이다. SVM이나 MLP를 이용해 형상의 전역 특징을 학습하는 것은 쉽지만, local 및 global information을 구분해 얻는 것이 필요하다. **전역 특징이 계산된 후, 각 점들의 특징과 전역 특징을 연결하여 포인트 특징을 얻는다.** 
+또한 출력으로 엑셀파일을 자동으로 생성하여 CCC 공지방에 공지하기 수월하게 데이터를 모았다. 엑셀파일명은 **'Soon_List.xlsx'**이다.
 
 
 
-### 3. Joint Alignment Network
+## IV. Code
 
-점군의 labeling은 형상 변환(translation, rotation)에 대해 불변이어야 한다. 이를 위해 mini-network(T-net)을 정의하고 적용한다. 이 때 T-net에서 transformation된 matrix를 추정하여 사용한다. 
+```python
+'''
+* *****************************************************************************
+* @author   ChangMin An
+* @Mod      2022 - 08 - 31
+* @brief    Soon Generate Program
+* *****************************************************************************
+'''
 
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import random as rm
+import tkinter as tk
+import pandas as pd
+
+
+# ============= Google Drive Environment =============== #
+scope = [
+    'https://spreadsheets.google.com/feeds',
+    'https://www.googleapis.com/auth/drive',
+]
+json_file_name = 'soon-361013-a1bfe708a386.json'
+credentials = ServiceAccountCredentials.from_json_keyfile_name(json_file_name, scope)
+gc = gspread.authorize(credentials)
+spreadsheet_url = 'https://docs.google.com/spreadsheets/d/1ODASwz-Ym1wPUzAIysxSaCD5prJqMQN07Ci9tBFtJ_o/edit#gid=1121346661'
+
+# 문서 불러오기
+doc = gc.open_by_url(spreadsheet_url)
+
+# a 시트 불러오기
+worksheet = doc.worksheet('sheet1')
+
+# 순 편성 Flag
+soon_flag = False
+
+# ============= TKinter Environment =============== #
+class Test():
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.geometry("200x100")
+        self.buttonA = tk.Button(self.root,
+                                 text = "Clear",
+                                 command=self.Clear_Sheet)
+
+        self.buttonB = tk.Button(self.root,
+                                text="Click to make Soon",
+                                command=self.Make_Soon)
+
+        self.buttonA.pack(side=tk.LEFT)
+        self.buttonB.pack(side=tk.RIGHT)
+        self.root.mainloop()
+
+    def Clear_Sheet(self):
+        worksheet.clear()
+
+    def Make_Soon(self):
+        global soon_flag
+        soon_flag = True
+      
+app=Test()
+
+# ============= Make Soon Squad =============== #
+if soon_flag == True:
+    # Make Name & 순장/예비순장 List
+    names = worksheet.col_values(2)
+    positions = worksheet.col_values(3)
+
+    values = [[0 for col in range(len(names))] for row in range(2)]
+    key_volunteer_sort = []
+    soon_people_sort = []
+    key_volunteer = []
+    soon_people = []
+
+    for i in range(1, len(names)):
+        values[0][i] = names[i]
+        values[1][i] = positions[i]
+
+    for i in range(2):
+        values[i] = list(filter(None, values[i]))
+
+    # 전체 인원 / 순장수
+    whole_num = len(values[0])
+    squad_key = 4 # 순장 수 순원 수 비교하면서 적절하게 조절하면 됨
+
+    print(f"전체인원 : {whole_num}명")
+
+    # 1. 순장, 예비순장 분리
+    for i in range(len(values[1])):
+        if values[1][i] == '순장':
+            key_volunteer_sort.append(values[0][i])
+        else:
+            soon_people_sort.append(values[0][i])
+
+    # 이름 중복 제거
+    for value in key_volunteer_sort:
+        if value not in key_volunteer:
+            key_volunteer.append(value)
+    
+    for value in soon_people_sort:
+        if value not in soon_people:
+            soon_people.append(value)
+
+    whole_key = len(key_volunteer)
+    whole_soon = len(soon_people)
+
+    # 순장, 예비순장 인원 출력
+    print(f"순장인원 : {whole_key}명")
+    print(f"예비순장인원 : {whole_soon}명")
+
+
+    # 2. 순 배치 한 조 당 6명 (4 / 2)
+    squad_buf = []
+    # 순장 배치
+    for i in range(whole_key//squad_key):
+        squad = []
+
+    
+        while len(squad) < squad_key:
+            if len(key_volunteer) != 0:
+                student = rm.choice(key_volunteer)
+                if student not in squad:
+                    squad.append(student)
+                    key_volunteer.remove(student)
+
+        # print(f"{i+1}", '조 :', squad)
+        squad_buf.append(squad)
+
+    for i in range(len(key_volunteer)):
+        squad_buf[i].append(key_volunteer[i])
+
+    # 예비순장 배치
+    for i in range(len(squad_buf)):
+        if len(soon_people) != 0:
+            student = rm.choice(soon_people)
+            if student not in squad:
+                squad_buf[i].append(student)
+                soon_people.remove(student)
+
+    for i in range((whole_key//squad_key) - 1, 0, -1):
+        if len(soon_people) != 0:
+            student = rm.choice(soon_people)
+            if student not in squad:
+                squad_buf[i].append(student)
+                soon_people.remove(student)
+        else:
+            break
+
+    # 조 편성 결과 출력
+    for i in range(len(squad_buf)):
+        print(f"{i+1}", '조 :', squad_buf[i])
+
+    # 엑셀파일로 Export
+    formation = []
+    for i in range(len(squad_buf)):
+        formation.append(f"{i+1}"+'조')
+    
+    Soon = pd.DataFrame()
+    Soon['조'] = formation
+    Soon['이름'] = squad_buf
+
+    Soon.to_excel(r"C:\Users\AnChangMin\Desktop\21-2\CCC\Soon_List.xlsx", index=False)
+
+```
