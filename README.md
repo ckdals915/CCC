@@ -18,6 +18,14 @@ CCC 순장훈련학교 조편성할 때 많은 인원으로 인해 현장에서 
 
 <img src="https://github.com/ckdals915/CCC/blob/main/picture/flowchart.jpg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
 
+
+
+
+
+
+
+
+
 ## III. QR Code
 
 <img src="https://github.com/ckdals915/CCC/blob/main/picture/QR_Code.jpeg?raw=true?raw=true?raw=true?raw=true" style="zoom:80%;" />
